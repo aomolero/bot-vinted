@@ -1,60 +1,53 @@
 import asyncio
-import time
 import os
+import requests
 from telegram import Bot
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 
 TOKEN = os.getenv("TOKEN")
 ID_CHAT = int(os.getenv("ID_CHAT"))
 
 bot = Bot(token=TOKEN)
 
+
 def buscar_chollos():
-    options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")
-    options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+    url = "https://www.vinted.es/api/v2/catalog/items"
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    params = {
+        "search_text": "nike",
+        "page": 1,
+        "per_page": 5
+    }
 
-    driver.get("https://www.vinted.es/catalog?search_text=nike")
-    time.sleep(6)
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept": "application/json"
+    }
 
-    # aceptar cookies
-    try:
-        botones = driver.find_elements(By.XPATH, "//button")
-        for b in botones:
-            if "acept" in b.text.lower():
-                driver.execute_script("arguments[0].click();", b)
-                time.sleep(2)
-                break
-    except:
-        pass
+    r = requests.get(url, headers=headers, params=params)
+    data = r.json()
 
     chollos = []
-    items = driver.find_elements(By.CSS_SELECTOR, "a[href*='/items/']")
 
-    for item in items[:5]:
-        link = item.get_attribute("href")
-        titulo = item.text.strip()
-        chollos.append((titulo if titulo else "Producto Nike", link))
+    for item in data.get("items", []):
+        titulo = item["title"]
+        precio = item["price"]
+        link = "https://www.vinted.es" + item["url"]
 
-    driver.quit()
+        chollos.append((titulo, precio, link))
+
     return chollos
+
 
 async def main():
     while True:
         chollos = buscar_chollos()
 
-        for titulo, link in chollos:
-            mensaje = f"🔥 CHOLLO\n{titulo}\n{link}"
-            await bot.send_message(chat_id=CHAT_ID, text=mensaje)
+        for titulo, precio, link in chollos:
+            mensaje = f"🔥 CHOLLO\n{titulo}\n💰 {precio}€\n{link}"
+            await bot.send_message(chat_id=ID_CHAT, text=mensaje)
             await asyncio.sleep(2)
 
         await asyncio.sleep(300)
+
 
 asyncio.run(main())
