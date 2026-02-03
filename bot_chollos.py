@@ -12,20 +12,25 @@ bot = Bot(token=TOKEN)
 def buscar_chollos():
     url = "https://www.vinted.es/api/v2/catalog/items"
 
-    params = {
-        "search_text": "nike",
-        "page": 1,
-        "per_page": 5
-    }
-
     headers = {
         "User-Agent": "Mozilla/5.0",
-        "Accept": "application/json"
+        "Accept": "application/json",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+
+    params = {
+        "search_text": "nike",
+        "catalog[]": 5,  # ropa hombre
+        "per_page": 5,
+        "page": 1
     }
 
     r = requests.get(url, headers=headers, params=params)
-    data = r.json()
 
+    print(r.status_code)
+    print(r.text[:200])  # para ver que devuelve
+
+    data = r.json()
     chollos = []
 
     for item in data.get("items", []):
@@ -36,6 +41,7 @@ def buscar_chollos():
         chollos.append((titulo, precio, link))
 
     return chollos
+
 
 
 async def main():
