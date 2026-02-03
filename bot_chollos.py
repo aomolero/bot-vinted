@@ -20,27 +20,32 @@ def buscar_chollos():
 
     params = {
         "search_text": "nike",
-        "catalog[]": 5,  # ropa hombre
         "per_page": 5,
         "page": 1
     }
 
     r = requests.get(url, headers=headers, params=params)
 
-    print(r.status_code)
-    print(r.text[:200])  # para ver que devuelve
+    print("STATUS:", r.status_code)
+    print("RESPUESTA:", r.text[:300])  # ver un trozo
+
+    if r.status_code != 200:
+        return []
 
     data = r.json()
-    chollos = []
+    items = data.get("items", [])
 
-    for item in data.get("items", []):
+    print("ITEMS ENCONTRADOS:", len(items))
+
+    chollos = []
+    for item in items:
         titulo = item["title"]
         precio = item["price"]
         link = "https://www.vinted.es" + item["url"]
-
         chollos.append((titulo, precio, link))
 
     return chollos
+
 
 
 
